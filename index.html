@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Vocabulary Quizzes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="https://static.wixstatic.com/media/0f55f2_b4662666c9b34fe58ed45b414b10cae3~mv2.png">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-emerald-100 flex items-center justify-center min-h-screen p-4">
+
+    <!-- The main container for the index page. -->
+    <main class="bg-white rounded-xl shadow-2xl max-w-4xl w-full overflow-hidden">
+        
+        <!-- Header Image -->
+        <img
+            src="https://static.wixstatic.com/media/0f55f2_d0ce1f16f68b4f57ab1ee7c6337b7902~mv2.jpg"
+            alt="An illustration of books, a lightbulb, and gears, symbolizing learning and knowledge"
+            class="w-full"
+            onerror="this.onerror=null;this.src='https://placehold.co/600x250/e2e8f0/64748b?text=Vocabulary+Quizzes';"
+        >
+
+        <!-- Main content area with padding -->
+        <div class="p-6 md:p-8">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold mb-2 text-gray-800">English Vocabulary Quizzes</h1>
+                <p class="text-lg text-gray-600 mb-8">Please choose a quiz to begin.</p>
+                
+                <!-- Grid container for the quiz links -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- Link to the Full Quiz -->
+                    <a href="./full-test.html" class="bg-green-600 text-white p-6 rounded-lg shadow-md hover:bg-green-700 transition-transform transform hover:scale-105 flex flex-col items-center justify-center">
+                        <span class="text-2xl font-bold">Full Vocabulary Test</span>
+                        <span class="mt-1 text-green-100">Multiple Choice, Fill-in-the-Blanks, and Matching</span>
+                    </a>
+
+                    <!-- Link to the Matching Game -->
+                    <a href="./matching-game.html" class="bg-green-600 text-white p-6 rounded-lg shadow-md hover:bg-green-700 transition-transform transform hover:scale-105 flex flex-col items-center justify-center">
+                        <span class="text-2xl font-bold">Matching Game</span>
+                         <span class="mt-1 text-green-100">Real-Time Feedback</span>
+                    </a>
+
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+</body>
+</html>
