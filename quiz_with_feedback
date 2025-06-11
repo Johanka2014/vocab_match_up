@@ -1,0 +1,248 @@
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocabulary Matching Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="https://static.wixstatic.com/media/0f55f2_b4662666c9b34fe58ed45b414b10cae3~mv2.png">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .word-selected {
+            background-color: #93c5fd;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+        .def-selected {
+            background-color: #a7f3d0;
+            border-color: #4ade80;
+            box-shadow: 0 0 0 2px #22c55e;
+        }
+        .paired {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .correct-match {
+            background-color: #dcfce7 !important;
+            border-color: #22c55e !important;
+            color: #166534;
+        }
+        .incorrect-match {
+            background-color: #fee2e2 !important;
+            border-color: #ef4444 !important;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .shake {
+            animation: shake 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-emerald-100 flex items-center justify-center min-h-screen p-4">
+
+    <main class="bg-white rounded-xl shadow-2xl max-w-6xl w-full overflow-hidden">
+        
+        <img
+            src="https://static.wixstatic.com/media/0f55f2_d0ce1f16f68b4f57ab1ee7c6337b7902~mv2.jpg"
+            alt="An illustration of books, a lightbulb, and gears, symbolizing learning and knowledge"
+            class="w-full"
+            onerror="this.onerror=null;this.src='https://placehold.co/600x250/e2e8f0/64748b?text=Vocabulary+Matching+Game';"
+        >
+
+        <div class="p-6 md:p-8">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold mb-2 text-gray-800">Vocabulary Matching Game</h1>
+                <p class="text-lg text-gray-600 mb-2">Click a word and then its definition to make a pair.</p>
+                <p id="score-display" class="text-2xl font-bold text-blue-600">Score: 0 / 10</p>
+            </div>
+            
+            <div id="feedback-container" class="text-center mt-4 h-8">
+                <!-- Real-time feedback messages will appear here -->
+            </div>
+
+            <div id="game-container" class="flex flex-col md:flex-row justify-between gap-8 mt-4">
+                <!-- Game columns will be generated here -->
+            </div>
+            
+            <div class="mt-8 flex justify-center gap-4">
+                <button id="new-game-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300">Start New Game</button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- DOM Elements ---
+        const gameContainer = document.getElementById('game-container');
+        const newGameBtn = document.getElementById('new-game-btn');
+        const feedbackContainer = document.getElementById('feedback-container');
+        const scoreDisplay = document.getElementById('score-display');
+
+        // --- VOCABULARY DATA ---
+        const fullVocabularyList = [
+            { word: 'Run down', definition: 'In a poor or neglected state after having been prosperous.' },
+            { word: 'Terrace', definition: 'A level paved area next to a building; a patio.' },
+            { word: 'Package deal', definition: 'A holiday organized by a travel agent, with arrangements for transport, accommodation, etc., made at an inclusive price.' },
+            { word: 'Bonnet', definition: 'The hinged metal cover over the engine of a motor vehicle.' },
+            { word: 'Hand in their notice', definition: 'To inform one\'s employer that one is leaving one\'s job.' },
+            { word: 'Spilled', definition: 'To cause or allow liquid to flow over the edge of its container, especially unintentionally.' },
+            { word: 'Lid', definition: 'A removable or hinged cover for the top of a container.' },
+            { word: 'Blisters', definition: 'A small bubble on the skin filled with serum and caused by friction, burning, or other damage.' },
+            { word: 'Endure', definition: 'To suffer something painful or difficult patiently.' },
+            { word: 'Propaganda', definition: 'Information, especially of a biased or misleading nature, used to promote a political cause or point of view.' },
+            { word: 'Backlash', definition: 'A strong and adverse reaction by a large number of people.' },
+            { word: 'Knee-jerk reaction', definition: 'An immediate and unthinking emotional response to a situation.' },
+            { word: 'Uncertainty', definition: 'The state of being not definitely known or predictable.' },
+            { word: 'Prejudice', definition: 'Preconceived opinion that is not based on reason or actual experience.' },
+        	{ word: 'Biased', definition: 'Unfairly prejudiced for or against someone or something.' },
+            { word: 'Agnostic', definition: 'A person who believes that nothing is known or can be known of the existence or nature of God.' },
+            { word: 'Census', definition: 'An official count or survey of a population.' },
+            { word: 'Artificial', definition: 'Made or produced by human beings rather than occurring naturally.' },
+            { word: 'Delayed', definition: 'Made to be late or slow.' },
+            { word: 'Lesser of two evils', definition: 'The less unpleasant of two poor options.' },
+            { word: 'Overcomplicate', definition: 'To make something more complicated than necessary.' },
+            { word: 'Throttle', definition: 'To restrict or control the flow or progress of something.' },
+            { word: 'Retract', definition: 'To withdraw a statement or accusation as untrue or unjustified.' },
+            { word: 'Wealth divide', definition: 'The unequal distribution of assets among residents of a country.' },
+            { word: 'Play it by ear', definition: 'To decide how to deal with a situation as it develops, rather than by having a plan.' },
+            { word: 'Take up', definition: 'The rate at which people accept a service or offer.' },
+            { word: 'Curates', definition: 'To select, organize, and present content or information.' },
+            { word: 'Knowledgeable', definition: 'Intelligent and well informed.' },
+            { word: 'Unwilling', definition: 'Not ready, eager, or prepared to do something.' },
+            { word: 'Turnover of staff', definition: 'The rate at which employees leave a workforce and are replaced.' },
+            { word: 'Onboarding', definition: 'The process of integrating a new employee into an organization.' },
+            { word: 'Flood the market', definition: 'To supply an excessive amount of a product, thus lowering the price.' },
+            { word: 'Persuade', definition: 'To cause someone to do something through reasoning or argument.' },
+            { word: 'Dedicated', definition: 'Devoted to a task or purpose.' },
+            { word: 'Inexpensive', definition: 'Not costing a great deal; cheap.' },
+            { word: 'Skeleton staff', definition: 'The minimum number of employees needed for a business to continue to operate.' },
+            { word: 'Investment', definition: 'The action or process of investing money for profit.' },
+            { word: 'Envious', definition: 'Feeling or showing a desire to have what someone else has.' },
+            { word: 'Outsourced', definition: 'To contract work out to an external organization.' },
+            { word: 'Contingency plan', definition: 'A plan designed to take account of a possible future event or circumstance.' }
+        ];
+
+        // --- GAME STATE ---
+        let correctPairs = {};
+        let selectedWordEl = null;
+        let selectedDefEl = null;
+        let score = 0;
+        let isChecking = false; // Prevents multiple checks at once
+
+        // --- FUNCTIONS ---
+        const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
+        
+        const startGame = () => {
+            // Reset state
+            selectedWordEl = null;
+            selectedDefEl = null;
+            score = 0;
+            updateScore();
+            feedbackContainer.innerHTML = '';
+            
+            const currentWords = shuffleArray(fullVocabularyList).slice(0, 10);
+            correctPairs = currentWords.reduce((acc, item) => ({...acc, [item.word]: item.definition}), {});
+
+            const words = currentWords.map(item => item.word);
+            const definitions = shuffleArray(currentWords.map(item => item.definition));
+            
+            // Build HTML
+            let content = `<div class="flex-1 flex flex-col gap-2"><h4 class="font-semibold text-center text-gray-600">Words</h4>`;
+            words.forEach(word => {
+                content += `<button class="match-word p-3 rounded-lg border-2 transition-all duration-200 bg-white hover:bg-blue-100" data-word="${word}">${word}</button>`;
+            });
+            content += `</div>`;
+            content += `<div class="flex-1 flex flex-col gap-2"><h4 class="font-semibold text-center text-gray-600">Definitions</h4>`;
+            definitions.forEach(def => {
+                content += `<button class="match-def p-3 rounded-lg border-2 transition-all duration-200 text-left bg-white hover:bg-green-100" data-def="${def}">${def}</button>`;
+            });
+            content += `</div>`;
+
+            gameContainer.innerHTML = content;
+            addGameEventListeners();
+        };
+
+        const addGameEventListeners = () => {
+            document.querySelectorAll('.match-word, .match-def').forEach(btn => {
+                btn.addEventListener('click', handleSelection);
+            });
+        };
+
+        const handleSelection = (e) => {
+            if (isChecking) return; // Don't allow selections while checking a pair
+            const btn = e.target;
+            if (btn.classList.contains('paired')) return;
+
+            if (btn.classList.contains('match-word')) {
+                if (selectedWordEl) selectedWordEl.classList.remove('word-selected');
+                selectedWordEl = btn;
+                btn.classList.add('word-selected');
+            } else if (btn.classList.contains('match-def')) {
+                if (selectedDefEl) selectedDefEl.classList.remove('def-selected');
+                selectedDefEl = btn;
+                btn.classList.add('def-selected');
+            }
+
+            if (selectedWordEl && selectedDefEl) {
+                isChecking = true; // Lock selections
+                checkPair();
+            }
+        };
+        
+        const checkPair = () => {
+            const word = selectedWordEl.dataset.word;
+            const def = selectedDefEl.dataset.def;
+            
+            // Create local variables to hold the selected elements
+            const localWordEl = selectedWordEl;
+            const localDefEl = selectedDefEl;
+
+            // Reset global selection variables immediately
+            selectedWordEl = null;
+            selectedDefEl = null;
+
+            if (correctPairs[word] === def) {
+                // Correct Match
+                localWordEl.classList.add('correct-match', 'paired');
+                localDefEl.classList.add('correct-match', 'paired');
+                localWordEl.classList.remove('word-selected');
+                localDefEl.classList.remove('def-selected');
+                score++;
+                updateScore();
+                isChecking = false; // Unlock for next selection
+                
+                if (score === 10) {
+                    feedbackContainer.innerHTML = `<p class="text-2xl font-bold text-green-600 animate-pulse">Congratulations! You matched them all!</p>`;
+                }
+
+            } else {
+                // Incorrect Match
+                localWordEl.classList.add('shake', 'incorrect-match');
+                localDefEl.classList.add('shake', 'incorrect-match');
+                
+                // Use the local variables inside the timeout
+                setTimeout(() => {
+                    localWordEl.classList.remove('shake', 'incorrect-match', 'word-selected');
+                    localDefEl.classList.remove('shake', 'incorrect-match', 'def-selected');
+                    isChecking = false; // Unlock after animation
+                }, 800);
+            }
+        };
+        
+        const updateScore = () => {
+            scoreDisplay.textContent = `Score: ${score} / 10`;
+        };
+
+        // --- Initial Setup ---
+        newGameBtn.addEventListener('click', startGame);
+        window.addEventListener('load', startGame);
+
+    </script>
+</body>
+</html>
