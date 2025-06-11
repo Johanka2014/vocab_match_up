@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Vocabulary Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="https://static.wixstatic.com/media/0f55f2_b4662666c9b34fe58ed45b414b10cae3~mv2.png">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for matching game selections */
+        .word-selected {
+            background-color: #93c5fd; /* bg-blue-300 */
+            border-color: #60a5fa; /* border-blue-400 */
+            box-shadow: 0 0 0 2px #3b82f6; /* ring-2 ring-blue-500 */
+        }
+        .def-selected {
+            background-color: #a7f3d0; /* bg-green-300 */
+            border-color: #4ade80; /* border-green-400 */
+            box-shadow: 0 0 0 2px #22c55e; /* ring-2 ring-green-500 */
+        }
+        .paired {
+            background-color: #d1d5db; /* bg-gray-300 */
+            color: #6b7280; /* text-gray-500 */
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-emerald-100 flex items-center justify-center min-h-screen p-4">
+
+    <!-- The main container for the quiz app. -->
+    <main id="app-container" class="bg-white rounded-xl shadow-2xl max-w-4xl w-full overflow-hidden">
+        
+        <!-- Header Image -->
+        <img
+            src="https://static.wixstatic.com/media/0f55f2_d0ce1f16f68b4f57ab1ee7c6337b7902~mv2.jpg"
+            alt="An illustration of books, a lightbulb, and gears, symbolizing learning and knowledge"
+            class="w-full"
+            onerror="this.onerror=null;this.src='https://placehold.co/600x250/e2e8f0/64748b?text=Vocabulary+Test';"
+        >
+
+        <!-- This div wraps the actual quiz content and provides padding. -->
+        <div class="p-6 md:p-8">
+            <!-- Intro Screen -->
+            <div id="intro-view" class="text-center">
+                <h1 class="text-4xl font-bold mb-4 text-gray-800">End of Year Vocabulary Test</h1>
+                <p class="text-lg text-gray-600 mb-8">This test uses 40 words and includes multiple choice, fill-in-the-blank, and matching questions.</p>
+                <button id="start-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105">
+                    Start Test
+                </button>
+            </div>
+
+            <!-- Test Screen -->
+            <div id="test-view" class="hidden">
+                <!-- Test content will be generated here by JavaScript -->
+            </div>
+
+            <!-- Results Screen -->
+            <div id="results-view" class="hidden">
+                <!-- Results content will be generated here by JavaScript -->
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- DOM Elements ---
+        const introView = document.getElementById('intro-view');
+        const testView = document.getElementById('test-view');
+        const resultsView = document.getElementById('results-view');
+        const startBtn = document.getElementById('start-btn');
+
+        // --- STATE ---
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let userAnswers = {};
+        let score = 0;
+        let startTime = null;
+        let endTime = null;
+        let selectedWord = null;
+        let selectedDef = null;
+
+        // --- VOCABULARY DATA (Updated from 'demos.txt') ---
+        const vocabularyList = [
+            { word: 'Run down', definition: 'In a poor or neglected state after having been prosperous.' },
+            { word: 'Terrace', definition: 'A level paved area next to a building; a patio.' },
+            { word: 'Package deal', definition: 'A holiday organized by a travel agent, with arrangements for transport, accommodation, etc., made at an inclusive price.' },
+            { word: 'Bonnet', definition: 'The hinged metal cover over the engine of a motor vehicle.' },
+            { word: 'Hand in their notice', definition: 'To inform one\'s employer that one is leaving one\'s job.' },
+            { word: 'Spilled', definition: 'To cause or allow liquid to flow over the edge of its container, especially unintentionally.' },
+            { word: 'Lid', definition: 'A removable or hinged cover for the top of a container.' },
+            { word: 'Blisters', definition: 'A small bubble on the skin filled with serum and caused by friction, burning, or other damage.' },
+            { word: 'Endure', definition: 'To suffer something painful or difficult patiently.' },
+            { word: 'Propaganda', definition: 'Information, especially of a biased or misleading nature, used to promote a political cause or point of view.' },
+            { word: 'Backlash', definition: 'A strong and adverse reaction by a large number of people.' },
+            { word: 'Knee-jerk reaction', definition: 'An immediate and unthinking emotional response to a situation.' },
+            { word: 'Uncertainty', definition: 'The state of being not definitely known or predictable.' },
+            { word: 'Prejudice', definition: 'Preconceived opinion that is not based on reason or actual experience.' },
+        	{ word: 'Biased', definition: 'Unfairly prejudiced for or against someone or something.' },
+            { word: 'Agnostic', definition: 'A person who believes that nothing is known or can be known of the existence or nature of God.' },
+            { word: 'Census', definition: 'An official count or survey of a population.' },
+            { word: 'Artificial', definition: 'Made or produced by human beings rather than occurring naturally.' },
+            { word: 'Delayed', definition: 'Made to be late or slow.' },
+            { word: 'Lesser of two evils', definition: 'The less unpleasant of two poor options.' },
+            { word: 'Overcomplicate', definition: 'To make something more complicated than necessary.' },
+            { word: 'Throttle', definition: 'To restrict or control the flow or progress of something.' },
+            { word: 'Retract', definition: 'To withdraw a statement or accusation as untrue or unjustified.' },
+            { word: 'Wealth divide', definition: 'The unequal distribution of assets among residents of a country.' },
+            { word: 'Play it by ear', definition: 'To decide how to deal with a situation as it develops, rather than by having a plan.' },
+            { word: 'Take up', definition: 'The rate at which people accept a service or offer.' },
+            { word: 'Curates', definition: 'To select, organize, and present content or information.' },
+            { word: 'Knowledgeable', definition: 'Intelligent and well informed.' },
+            { word: 'Unwilling', definition: 'Not ready, eager, or prepared to do something.' },
+            { word: 'Turnover of staff', definition: 'The rate at which employees leave a workforce and are replaced.' },
+            { word: 'Onboarding', definition: 'The process of integrating a new employee into an organization.' },
+            { word: 'Flood the market', definition: 'To supply an excessive amount of a product, thus lowering the price.' },
+            { word: 'Persuade', definition: 'To cause someone to do something through reasoning or argument.' },
+            { word: 'Dedicated', definition: 'Devoted to a task or purpose.' },
+            { word: 'Inexpensive', definition: 'Not costing a great deal; cheap.' },
+            { word: 'Skeleton staff', definition: 'The minimum number of employees needed for a business to continue to operate.' },
+            { word: 'Investment', definition: 'The action or process of investing money for profit.' },
+            { word: 'Envious', definition: 'Feeling or showing a desire to have what someone else has.' },
+            { word: 'Outsourced', definition: 'To contract work out to an external organization.' },
+            { word: 'Contingency plan', definition: 'A plan designed to take account of a possible future event or circumstance.' }
+        ];
+
+        // --- FUNCTIONS ---
+        const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
+
+        const generateTestQuestions = () => {
+            const shuffledVocab = shuffleArray(vocabularyList);
+            
+            const mcq = shuffledVocab.slice(0, 10).map(vocab => {
+                const incorrectDefs = vocabularyList.filter(v => v.word !== vocab.word).map(v => v.definition);
+                const options = shuffleArray([vocab.definition, ...shuffleArray(incorrectDefs).slice(0, 3)]);
+                return {
+                    type: 'multiple-choice',
+                    question: `What is the definition of "${vocab.word}"?`,
+                    word: vocab.word,
+                    options: options,
+                    correctAnswer: vocab.definition
+                };
+            });
+
+            const fillInBlanksData = [
+                { question: 'Many of the old buildings in the village were quite ________ and needed repair.', word: 'Run down' },
+                { question: 'After ten years at the company, she decided to ________.', word: 'Hand in their notice' },
+                { question: 'I will have to ________ the pain until the medication starts to work.', word: 'Endure' },
+                { question: 'His angry comments were just a ________; he apologized later.', word: 'Knee-jerk reaction' },
+                { question: 'The government conducts a national ________ every ten years.', word: 'Census' },
+                { question: 'We have no set plans for the weekend, we will just ________.', word: 'Play it by ear' },
+                { question: 'The company has a high ________ because the pay is too low.', word: 'Turnover of staff' },
+                { question: 'We need a ________ in case the main server fails.', word: 'Contingency plan' },
+                { question: 'He tried to ________ me to go to the party, but I was too tired.', word: 'Persuade' },
+                { question: 'Many companies have ________ their customer service to call centers overseas.', word: 'Outsourced' }
+            ];
+            const fillInBlanks = shuffleArray(fillInBlanksData).slice(0, 8).map(q => ({ ...q, type: 'fill-in-the-blank', correctAnswer: q.word }));
+
+            const matchingWords = shuffledVocab.slice(10, 18);
+            const matchingDefs = shuffleArray(matchingWords.map(v => v.definition));
+            const matchingQuestion = {
+                type: 'matching',
+                question: 'Match the words to their correct definitions.',
+                words: matchingWords.map(v => v.word),
+                definitions: matchingDefs,
+                correctPairs: matchingWords.reduce((acc, v) => ({ ...acc, [v.word]: v.definition }), {})
+            };
+            
+            questions = shuffleArray([...mcq, ...fillInBlanks, matchingQuestion]);
+        };
+        
+        const switchView = (view) => {
+            introView.classList.add('hidden');
+            testView.classList.add('hidden');
+            resultsView.classList.add('hidden');
+            document.getElementById(`${view}-view`).classList.remove('hidden');
+        }
+
+        const startTest = () => {
+            generateTestQuestions();
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            score = 0;
+            startTime = Date.now();
+            endTime = null;
+            renderQuestion();
+            switchView('test');
+        };
+
+        const renderQuestion = () => {
+            const q = questions[currentQuestionIndex];
+            if (!q) return;
+
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            let content = `
+                <div class="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                    <div class="bg-blue-500 h-2.5 rounded-full" style="width: ${progress}%"></div>
+                </div>
+                <div class="mb-4 text-gray-700">
+                    <p class="text-xl font-semibold">Question ${currentQuestionIndex + 1} of ${questions.length}</p>
+                    <p class="text-lg mt-2">${q.question}</p>
+                </div>
+            `;
+            
+            if (q.type === 'multiple-choice') {
+                content += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+                q.options.forEach(option => {
+                    content += `<button class="mc-option p-4 rounded-lg border-2 transition-all duration-200 text-left bg-white border-gray-300 hover:border-blue-400" data-answer="${option}">${option}</button>`;
+                });
+                content += `</div>`;
+            }
+
+            if (q.type === 'fill-in-the-blank') {
+                content += `<input type="text" id="fill-in-blank-input" class="mt-2 p-3 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type the correct word...">`;
+            }
+
+            if (q.type === 'matching') {
+                content += `<div class="flex flex-col md:flex-row justify-between gap-8 mt-4">`;
+                content += `<div class="flex-1 flex flex-col gap-2"><h4 class="font-semibold text-center text-gray-600">Words</h4>`;
+                q.words.forEach(word => {
+                    content += `<button class="match-word p-3 rounded-lg border-2 transition-all duration-200 bg-white hover:bg-blue-100" data-word="${word}">${word}</button>`;
+                });
+                content += `</div>`;
+                content += `<div class="flex-1 flex flex-col gap-2"><h4 class="font-semibold text-center text-gray-600">Definitions</h4>`;
+                q.definitions.forEach(def => {
+                    content += `<button class="match-def p-3 rounded-lg border-2 transition-all duration-200 text-left bg-white hover:bg-green-100" data-def="${def}">${def}</button>`;
+                });
+                content += `</div></div>`;
+            }
+            
+            content += `
+                <div class="mt-8 flex justify-end">
+                    <button id="next-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300">
+                        ${currentQuestionIndex < questions.length - 1 ? 'Next' : 'Finish'}
+                    </button>
+                </div>`;
+
+            testView.innerHTML = content;
+            addQuestionEventListeners();
+        };
+
+        const addQuestionEventListeners = () => {
+            document.getElementById('next-btn').addEventListener('click', nextQuestion);
+            
+            const q = questions[currentQuestionIndex];
+            if (q.type === 'multiple-choice') {
+                document.querySelectorAll('.mc-option').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.mc-option').forEach(b => b.classList.remove('bg-blue-500', 'border-blue-500', 'text-white', 'shadow-md'));
+                        e.target.classList.add('bg-blue-500', 'border-blue-500', 'text-white', 'shadow-md');
+                        userAnswers[q.word] = e.target.dataset.answer;
+                    });
+                });
+            }
+            
+            if (q.type === 'fill-in-the-blank') {
+                document.getElementById('fill-in-blank-input').addEventListener('input', (e) => {
+                    userAnswers[q.word] = e.target.value;
+                });
+            }
+
+            if (q.type === 'matching') {
+                document.querySelectorAll('.match-word').forEach(btn => btn.addEventListener('click', handleMatchClick));
+                document.querySelectorAll('.match-def').forEach(btn => btn.addEventListener('click', handleMatchClick));
+            }
+        };
+
+        const handleMatchClick = (e) => {
+            const btn = e.target;
+            const key = currentQuestionIndex;
+
+            if (btn.classList.contains('match-word')) {
+                if(selectedWord) selectedWord.classList.remove('word-selected');
+                selectedWord = btn;
+                btn.classList.add('word-selected');
+            } else if (btn.classList.contains('match-def')) {
+                if(selectedDef) selectedDef.classList.remove('def-selected');
+                selectedDef = btn;
+                btn.classList.add('def-selected');
+            }
+
+            if (selectedWord && selectedDef) {
+                if (!userAnswers[key]) userAnswers[key] = {};
+                userAnswers[key][selectedWord.dataset.word] = selectedDef.dataset.def;
+
+                selectedWord.classList.add('paired');
+                selectedDef.classList.add('paired');
+                selectedWord.classList.remove('word-selected');
+                selectedDef.classList.remove('def-selected');
+                
+                selectedWord = null;
+                selectedDef = null;
+            }
+        };
+
+        const nextQuestion = () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else {
+                finishTest();
+            }
+        };
+        
+        const finishTest = () => {
+            endTime = Date.now();
+            score = 0;
+            questions.forEach((q, index) => {
+                const key = q.type === 'matching' ? index : q.word;
+                const userAnswer = userAnswers[key];
+                if (!userAnswer) return;
+
+                if (q.type === 'multiple-choice' && userAnswer === q.correctAnswer) {
+                    score++;
+                } else if (q.type === 'fill-in-the-blank' && userAnswer.trim().toLowerCase() === q.correctAnswer.toLowerCase()) {
+                    score++;
+                } else if (q.type === 'matching') {
+                    let correctMatches = 0;
+                    Object.keys(userAnswer).forEach(word => {
+                        if (q.correctPairs[word] === userAnswer[word]) {
+                            correctMatches++;
+                        }
+                    });
+                    score += (correctMatches / q.words.length);
+                }
+            });
+            renderResults();
+            switchView('results');
+        };
+
+        const renderResults = () => {
+            const timeTaken = ((endTime - startTime) / 1000).toFixed(2);
+            const percentage = questions.length > 0 ? ((score / questions.length) * 100).toFixed(0) : 0;
+            
+            let content = `
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold mb-4 text-gray-800">Test Complete!</h2>
+                    <div class="bg-gray-100 p-6 rounded-lg shadow-inner mb-6">
+                        <p class="text-2xl text-gray-700">Your Score: <span class="font-bold text-blue-600">${score.toFixed(1)} / ${questions.length}</span></p>
+                        <p class="text-4xl font-bold text-blue-600 mt-2">${percentage}%</p>
+                        <p class="text-md text-gray-600 mt-4">Time Taken: ${timeTaken} seconds</p>
+                    </div>
+                     <div class="text-left mt-8 max-h-96 overflow-y-auto pr-2">
+                        <h3 class="text-2xl font-semibold mb-4 border-b pb-2">Review Your Answers</h3>
+            `;
+
+            questions.forEach((q, index) => {
+                const key = q.type === 'matching' ? index : q.word;
+                const userAnswer = userAnswers[key];
+                
+                if (q.type === 'matching') {
+                    content += `<div class="mb-4 p-4 rounded-lg bg-white shadow"><p class="font-semibold">${index + 1}. ${q.question}</p><ul class="list-disc list-inside mt-2">`;
+                    q.words.forEach(word => {
+                        const userDef = userAnswer ? userAnswer[word] : "No answer";
+                        const correctDef = q.correctPairs[word];
+                        const isMatchCorrect = userDef === correctDef;
+                        content += `<li class="${isMatchCorrect ? 'text-green-700' : 'text-red-700'}"><strong>${word}:</strong> Your match "${userDef || 'none'}" was ${isMatchCorrect ? 'correct' : `incorrect. Correct was "${correctDef}"`}.</li>`;
+                    });
+                    content += `</ul></div>`;
+                } else {
+                    let isCorrect = false;
+                    let correctAnswerText = '';
+                    if (q.type === 'multiple-choice') {
+                        isCorrect = userAnswer === q.correctAnswer;
+                        correctAnswerText = q.correctAnswer;
+                    } else if (q.type === 'fill-in-the-blank') {
+                        isCorrect = userAnswer && userAnswer.trim().toLowerCase() === q.correctAnswer.toLowerCase();
+                        correctAnswerText = q.correctAnswer;
+                    }
+                    content += `<div class="mb-4 p-4 rounded-lg shadow ${isCorrect ? 'bg-green-100 border-l-4 border-green-500' : 'bg-red-100 border-l-4 border-red-500'}">
+                                    <p class="font-semibold">${index + 1}. ${q.question}</p>
+                                    <p class="mt-2">Your answer: <span class="font-medium">${userAnswer || 'No answer'}</span></p>
+                                    ${!isCorrect ? `<p class="mt-1">Correct answer: <span class="font-medium">${correctAnswerText}</span></p>` : ''}
+                                </div>`;
+                }
+            });
+
+            content += `</div><button id="try-again-btn" class="mt-8 bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 transform hover:scale-105">Try Again</button></div>`;
+            resultsView.innerHTML = content;
+            document.getElementById('try-again-btn').addEventListener('click', () => {
+                switchView('intro');
+            });
+        };
+
+        // --- Initial Event Listener ---
+        startBtn.addEventListener('click', startTest);
+    </script>
+</body>
+</html>
